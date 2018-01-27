@@ -108,15 +108,6 @@ int main(int argc, char *argv[])
 		fscanf(fptr, "%lf %lf %lf %lf",&coords[0][i],
 				&coords[1][i],&coords[2][i],&q[i]);
 	}
-
-	time1 = clock(); /*time after file read*/
-	printf("Value of system clock after coord read = %ld\n",time1);
-
-
-	/* Step 5 - calculate the number of pairs and E. - this is the
-	   majority of the work. */
-	total_e = 0.0;
-	cut_count = 0;
 	double * coords_0;
 	double * coords_1;
 	double * coords_2;
@@ -133,6 +124,15 @@ int main(int argc, char *argv[])
 	cut2 = cut * cut;
 
 	double qi;
+
+	time1 = clock(); /*time after file read*/
+	printf("Value of system clock after coord read = %ld\n",time1);
+
+
+	/* Step 5 - calculate the number of pairs and E. - this is the
+	   majority of the work. */
+	total_e = 0.0;
+	cut_count = 0;
 	/* double a_inverse = 1.0 / a; --not needed, as it turns out*/
 
 	for (i = 0; i < natom; ++i)
