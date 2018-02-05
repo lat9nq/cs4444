@@ -8,7 +8,7 @@
 # ~~~~~~ COMPILERS AND FLAGS ~~~~~~
 
 CC=gcc
-CCFLAGS=-Wall -Ofast -fno-stack-protector
+CCFLAGS=-Wall -Ofast -fno-stack-protector -march=haswell
 LIBS=-lm
 
 HIGHLIGHT=source-highlight -n

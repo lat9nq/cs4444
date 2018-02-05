@@ -38,12 +38,6 @@
 double **alloc_2D_double(int nrows, int ncolumns);
 void double_2D_array_free(double **array);
 
-typedef struct coord_t {
-	double a;
-	double b;
-	double c;
-} coord;
-
 int main(int argc, char *argv[])
 {
 	long natom, i, j;
@@ -53,7 +47,7 @@ int main(int argc, char *argv[])
 	clock_t time0, time1, time2;
 
 	double cut;     /* Cut off for Rij in distance units */
-	coord *coords;
+	double **coords;
 	double *q;
 	double total_e, current_e, vec2, rij;
 	double a;
@@ -98,8 +92,7 @@ int main(int argc, char *argv[])
 
 	/* Step 3 - Allocate the arrays to store the coordinate and charge
 	   data */
-	//coords=alloc_2D_double(3,natom);
-	coords = (coord*)malloc(sizeof(coord)*natom);
+	coords=alloc_2D_double(3,natom);
 	if ( coords==NULL )
 	{
 		printf("Allocation error coords");
@@ -115,16 +108,16 @@ int main(int argc, char *argv[])
 	/* Step 4 - read the coordinates and charges. */
 	for (i = 0; i<natom; ++i)
 	{
-		fscanf(fptr, "%lf %lf %lf %lf",&((coords[i]).a),
-				&((coords[i]).b),&((coords[i]).c),&q[i]);
+		fscanf(fptr, "%lf %lf %lf %lf",&coords[0][i],
+				&coords[1][i],&coords[2][i],&q[i]);
 	}
-	/*double * coords_0;
+	double * coords_0;
 	double * coords_1;
 	double * coords_2;
 
-	coords_0 = coords[0]; -- We take the pointer dereferences out of the loop and do it here --
+	coords_0 = coords[0]; /* We take the pointer dereferences out of the loop */
 	coords_1 = coords[1];
-	coords_2 = coords[2]; */
+	coords_2 = coords[2];
 
 	double i0; /* These will store the i-dependent values outside of the loop */
 	double i1;
@@ -148,33 +141,32 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < natom; ++i)
 	{
-		i0 = coords[i].a;
-		i1 = coords[i].b;
-		i2 = coords[i].c;
+		i0 = coords_0[i]; /* load the references to coords[#][i] once */
+		i1 = coords_1[i];
+		i2 = coords_2[i];
 
 		qi = q[i]; /* move a dereference out of the loop */
 
 		for (j = 0; j < i; ++j)
 		{
-			coord coords_j = coords[j];
-			vec2 = (i0-coords_j.a)*(i0-coords_j.a) //splitting it into vec2_1 didnt do anything
-				+ (i1-coords_j.b)*(i1-coords_j.b)
-				+ (i2-coords_j.c)*(i2-coords_j.c);
+			vec2 = (i0-coords_0[j])*(i0-coords_0[j])
+				+ (i1-coords_1[j])*(i1-coords_1[j])
+				+ (i2-coords_2[j])*(i2-coords_2[j]);
 			/* X^2 + Y^2 + Z^2 */
 			/* take out the square root when unnecessary */
 			/* Check if this is below the cut off */
-			if ( vec2 <= cut ) /* we're now just directly comparing vec2 to the square of the cutoff */
+			if ( vec2 <= cut ) /* we're now just comparing vec2 to cut^2*/
 			{
 				rij = sqrt(vec2); /* moved here */
 				/* Increment the counter of pairs below cutoff */
 				++cut_count;
 				current_e = exp(rij*(qi+q[j]))/rij;
-				total_e = total_e + current_e; /* - 1.0/a; --take out adding the inverse altogether for later */
+				total_e = total_e + current_e;
 			}
 		} /* for j=1 j<=natom */
 	} /* for i=1 i<=natom */
 
-	total_e = total_e - cut_count/a; /* here we subtract the inverse of a times the number of times we would have earlier */
+	total_e = total_e - cut_count/a; /* here we subtract a-inverse times the count */
 
 	time2 = clock(); /* time after reading of file and calculation */
 	printf("Value of system clock after coord read and E calc = %ld\n",
@@ -196,8 +188,7 @@ int main(int argc, char *argv[])
 	   return values here but for the purposes of this tutorial we can
 	   ignore this. */
 	free(q);
-	//double_2D_array_free(coords);
-	free(coords);
+	double_2D_array_free(coords);
 
 	fclose(fptr);
 
