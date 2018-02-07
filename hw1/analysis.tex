@@ -77,18 +77,18 @@
 	\begin{tabular}{| p{3cm} | p{4cm} | p{1.5cm} | p{1.5cm} | l |}
 	\hline
 	Compiler flags & Optimization\footnotemark[1] & Time to calculate $E$ (s) & Total Time (s) & Result \\ \hline
-	None & & 3.5987 & 3.6120 & 58261662.7646147534 \\ \hline
-	-O1 & & 1.8520 & 1.8647 & 58261662.7646147534 \\ \hline
-	-O2 & & 1.7811 & 1.7930 & 58261662.7646147534 \\ \hline
-	-O3 & & 1.7855 & 1.7973 & 58261662.7646147534 \\ \hline
-	-Ofast & & 1.1835 & 1.1961 & 58261662.7646147460 \\ \hline
-	-O3 & For-loops start from 0 & 1.7535 & 1.7666 & 58261662.7646147534 \\ \hline
-	-O3 & Bring out dereferences & 1.7486 & 1.7621 & 58261662.7646147534 \\ \hline
-	-O3 & Written-out squaring & & & \\ \hline
-	-O3 & Combining exponents & 0.9576 & 0.9699 & 58261654.5481551513 \\ \hline
-	-O3 & Comparing $r_{i,j}^2$ to $cut^2$ & 1.5819 & 1.5953 & 58261654.5481551588 \\ \hline
-	-O3 & Subtract $x*{^1/_a}$ later & 0.9473 & 0.9594 & 58261654.5481553227 \\ \hline
-	-O3 & Convert 2D array to 1D struct array & & & \\ \hline
+	None & & 1.8205 & 1.8316 & 58261662.7646147534 \\ \hline
+	-O1 & & 1.8001 & 1.8108 & 58261662.7646147534 \\ \hline
+	-O2 & & 1.7017 & 1.7124 & 58261662.7646147534 \\ \hline
+	-O3 & & 1.7050 & 1.7156 & 58261662.7646147534 \\ \hline
+	-Ofast & & 1.4405 & 1.4513 & 58261662.7646147460 \\ \hline
+	-O3 & For-loops start from 0 & 2.1134 & 2.1240 & 58261662.7646147534 \\ \hline
+	-O3 & Bring out dereferences & 1.6763 & 1.6872 & 58261662.7646147534 \\ \hline
+	-O3 & Written-out squaring & 1.7369 & 1.7476 & 58261662.7646147534 \\ \hline
+	-O3 & Combining exponents & 1.5930 & 1.6035 & 58261662.7646147460 \\ \hline
+	-O3 & Comparing $r_{i,j}^2$ to $cut^2$ & 1.5319 & 1.5424 & 58261654.5481551588 \\ \hline
+	-O3 & Subtract $x*{^1/_a}$ later & 1.8358 & 1.8466 & 58261662.7646149173 \\ \hline
+	-O3 & Convert 2D array to 1D struct array & 1.6690 & 1.6690 & 58261662.7646147534 \\ \hline
 	-O2 & All above & 0.9450 & 0.9574 & 58261654.5481553227 \\ \hline
 	-O2 -ffast-math & All above & 0.9342 & 0.9462 & 58261654.5481553227 \\ \hline
 	-Ofast & All above & 0.9299 & 0.9422 & 58261654.5481553227 \\ \hline
