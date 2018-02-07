@@ -35,10 +35,6 @@
 double **alloc_2D_double(int nrows, int ncolumns);
 void double_2D_array_free(double **array);
 
-typedef struct coord_t {
-	double a, b, c;
-} coord;
-
 int main(int argc, char *argv[])
 {
 	long natom, i, j;
@@ -48,7 +44,7 @@ int main(int argc, char *argv[])
 	clock_t time0, time1, time2;
 
 	double cut;     /* Cut off for Rij in distance units */
-	coord *coords; /* -> now an array of coord structs */
+	double **coords;
 	double *q;
 	double total_e, current_e, vec2, rij;
 	double a;
@@ -93,7 +89,7 @@ int main(int argc, char *argv[])
 
 	/* Step 3 - Allocate the arrays to store the coordinate and charge
 	   data */
-	coords=(coord*)malloc(sizeof(*coords) * natom); //alloc_2D_double(3,natom); // -> malloc the struct array
+	coords=alloc_2D_double(3,natom);
 	if ( coords==NULL )
 	{
 		printf("Allocation error coords");
@@ -109,8 +105,7 @@ int main(int argc, char *argv[])
 	/* Step 4 - read the coordinates and charges. */
 	for (i = 0; i<natom; ++i)
 	{
-		fscanf(fptr, "%lf %lf %lf %lf", &coords[i].a, &coords[i].b, &coords[i].c, &q[i]);
-		//fscanf(fptr, "%lf %lf %lf %lf",&coords[0][i], \
+		fscanf(fptr, "%lf %lf %lf %lf",&coords[0][i],
 				&coords[1][i],&coords[2][i],&q[i]);
 	}
 
@@ -122,15 +117,15 @@ int main(int argc, char *argv[])
 	   majority of the work. */
 	total_e = 0.0;
 	cut_count = 0;
-	for (i=1; i<=natom; ++i)
+	for (i = 0; i < natom; ++i)
 	{
-		for (j=1; j<=natom; ++j)
+		for (j = 0; j < natom; ++j)
 		{
 			if ( j < i )   /* Avoid double counting. */
 			{
-				vec2 = pow((coords[i-1].a-coords[j-1].a),2.0)
-					+ pow((coords[i-1].b-coords[j-1].b),2.0)
-					+ pow((coords[i-1].c-coords[j-1].c),2.0);
+				vec2 = pow((coords[0][i]-coords[0][j]),2.0)
+					+ pow((coords[1][i]-coords[1][j]),2.0)
+					+ pow((coords[2][i]-coords[2][j]),2.0);
 				/* X^2 + Y^2 + Z^2 */
 				rij = sqrt(vec2);
 				/* Check if this is below the cut off */
@@ -138,7 +133,7 @@ int main(int argc, char *argv[])
 				{
 					/* Increment the counter of pairs below cutoff */
 					++cut_count;
-					current_e = (exp(rij*q[i-1])*exp(rij*q[j-1]))/rij;
+					current_e = (exp(rij*q[i])*exp(rij*q[j]))/rij;
 					total_e = total_e + current_e - 1.0/a;
 				}
 			} /* if (j<i) */
@@ -165,8 +160,7 @@ int main(int argc, char *argv[])
 	   return values here but for the purposes of this tutorial we can
 	   ignore this. */
 	free(q);
-	//double_2D_array_free(coords);
-	free(coords);
+	double_2D_array_free(coords);
 
 	fclose(fptr);
 

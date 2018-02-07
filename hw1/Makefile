@@ -8,7 +8,7 @@
 # ~~~~~~ COMPILERS AND FLAGS ~~~~~~
 
 CC=gcc
-CCFLAGS=-Wall -Ofast -fno-stack-protector -march=haswell
+CCFLAGS=-Wall -O3
 LIBS=-lm
 
 HIGHLIGHT=source-highlight -n
@@ -17,6 +17,10 @@ TEX=pdflatex
 
 # ~~~~~~ SUFFIX RULES ~~~~~~
 
+%-optimized.o:%-optimized.c
+	$(CC) $(CCFLAGS) -o$@ -c $< $(LIBS)
+%-optimized:%-optimized.o
+	$(CC) $(CCFLAGS) -o$@ $< $(LIBS)
 %.o:%.c
 	$(CC) $(CCFLAGS) -o$@ -c $< $(LIBS)
 %:%.o
@@ -49,7 +53,7 @@ writeup.pdf:analysis.pdf optimized.pdf
 
 .PHONY: clean tar
 clean:
-	-rm -vf original optimized generate_input *.o *.aux *.log *.gmon analysis.pdf optimized.pdf writeup.pdf *.html
+	-rm -vf original optimized generate_input *.o *.aux *.log *.gmon analysis.pdf optimized.pdf writeup.pdf *.html 0[0-9]-optimized
 
 TAR_REQ=optimized.c writeup.pdf generate_input.c original.c Makefile analysis.tex
 tar:$(TAR_REQ)
