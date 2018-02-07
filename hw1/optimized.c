@@ -35,6 +35,10 @@
 double **alloc_2D_double(int nrows, int ncolumns);
 void double_2D_array_free(double **array);
 
+typedef struct coord_t {
+	double a, b, c;
+} coord;
+
 int main(int argc, char *argv[])
 {
 	long natom, i, j;
@@ -44,7 +48,7 @@ int main(int argc, char *argv[])
 	clock_t time0, time1, time2;
 
 	double cut;     /* Cut off for Rij in distance units */
-	double **coords;
+	coord *coords;
 	double *q;
 	double total_e, current_e, vec2, rij;
 	double a;
@@ -89,7 +93,7 @@ int main(int argc, char *argv[])
 
 	/* Step 3 - Allocate the arrays to store the coordinate and charge
 	   data */
-	coords=alloc_2D_double(3,natom);
+	coords=(coord*)malloc(sizeof(*coords)*natom);//alloc_2D_double(3,natom);
 	if ( coords==NULL )
 	{
 		printf("Allocation error coords");
@@ -105,8 +109,7 @@ int main(int argc, char *argv[])
 	/* Step 4 - read the coordinates and charges. */
 	for (i = 0; i<natom; ++i)
 	{
-		fscanf(fptr, "%lf %lf %lf %lf",&coords[0][i],
-				&coords[1][i],&coords[2][i],&q[i]);
+		fscanf(fptr, "%lf %lf %lf %lf", &(coords[i].a), &(coords[i].b), &(coords[i].c), &q[i]);
 	}
 
 	time1 = clock(); /*time after file read*/
@@ -117,11 +120,10 @@ int main(int argc, char *argv[])
 	   majority of the work. */
 	total_e = 0.0;
 	cut_count = 0;
-<<<<<<< HEAD
 
 	double coordia;
 	double coordib;
-	double coordib;
+	double coordic;
 
 	double q_i;
 
@@ -134,11 +136,11 @@ int main(int argc, char *argv[])
 		coordic = coords[i].c;
 
 		q_i = q[i];
-		for (j = 0; j < i ++j)
+		for (j = 0; j < i; ++j)
 		{
 			vec2 = (coordia-coords[j].a)*(coordia-coords[j].a)
-				+(coordia-coords[j].b)*(coordia-coords[j].b)
-				+(coordia-coords[j].c)*(coordia-coords[j].c);
+				+(coordib-coords[j].b)*(coordib-coords[j].b)
+				+(coordic-coords[j].c)*(coordic-coords[j].c);
 			/* X^2 + Y^2 + Z^2 */
 			/* Check if this is below the cut off */
 			if ( vec2 <= cut2 )
@@ -174,7 +176,8 @@ int main(int argc, char *argv[])
 	   return values here but for the purposes of this tutorial we can
 	   ignore this. */
 	free(q);
-	double_2D_array_free(coords);
+	//double_2D_array_free(coords);
+	free(coords);
 
 	fclose(fptr);
 
