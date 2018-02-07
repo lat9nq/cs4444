@@ -117,42 +117,25 @@ int main(int argc, char *argv[])
 	   majority of the work. */
 	total_e = 0.0;
 	cut_count = 0;
-<<<<<<< HEAD
-
-	double coordia;
-	double coordib;
-	double coordib;
-
-	double q_i;
-
-	double cut2 = cut * cut;
-
 	for (i = 0; i < natom; ++i)
 	{
-		coordia = coords[i].a;
-		coordib = coords[i].b;
-		coordic = coords[i].c;
-
-		q_i = q[i];
-		for (j = 0; j < i ++j)
+		for (j = 0; j < i; ++j)
 		{
-			vec2 = (coordia-coords[j].a)*(coordia-coords[j].a)
-				+(coordia-coords[j].b)*(coordia-coords[j].b)
-				+(coordia-coords[j].c)*(coordia-coords[j].c);
+			vec2 = pow((coords[0][i-1]-coords[0][j-1]),2.0)
+				+ pow((coords[1][i-1]-coords[1][j-1]),2.0)
+				+ pow((coords[2][i-1]-coords[2][j-1]),2.0);
 			/* X^2 + Y^2 + Z^2 */
+			rij = sqrt(vec2);
 			/* Check if this is below the cut off */
-			if ( vec2 <= cut2 )
+			if ( rij <= cut )
 			{
-				rij = sqrt(vec2);
 				/* Increment the counter of pairs below cutoff */
 				++cut_count;
-				current_e = exp(rij*(q_i+q[j]))/rij;
-				total_e = total_e + current_e;
+				current_e = (exp(rij*q[i-1])*exp(rij*q[j-1]))/rij;
+				total_e = total_e + current_e - 1.0/a;
 			}
 		} /* for j=1 j<=natom */
 	} /* for i=1 i<=natom */
-
-	total_e -= 1.0 / a;
 
 	time2 = clock(); /* time after reading of file and calculation */
 	printf("Value of system clock after coord read and E calc = %ld\n",
