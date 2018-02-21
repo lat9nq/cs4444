@@ -174,7 +174,10 @@ int main(int argc, char *argv[])
 		} /* for j=1 j<=natom */
 	} /* for i=1 i<=natom */
 
+<<<<<<< HEAD
 	// moved here, fixed for not being calculated cut_count times
+=======
+>>>>>>> cb541858726640f13691f4a819ab2d86a3694561
 	total_e -= cut_count / a;
 
 	time2 = clock(); /* time after reading of file and calculation */
