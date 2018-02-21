@@ -35,6 +35,11 @@
 double **alloc_2D_double(int nrows, int ncolumns);
 void double_2D_array_free(double **array);
 
+/* struct coord
+ *
+ * This struct is aimed at reducing cache misses during execution.
+ * a, b, and c correspond to coord[0], coord[1], and coord[2], respectively.
+ */
 typedef struct coord_t {
 	double a, b, c;
 } coord;
@@ -48,7 +53,7 @@ int main(int argc, char *argv[])
 	clock_t time0, time1, time2;
 
 	double cut;     /* Cut off for Rij in distance units */
-	coord *coords;
+	coord *coords; // -> changed to a 1D array of coord structs
 	double *q;
 	double total_e, current_e, vec2, rij;
 	double a;
@@ -93,7 +98,8 @@ int main(int argc, char *argv[])
 
 	/* Step 3 - Allocate the arrays to store the coordinate and charge
 	   data */
-	coords=(coord*)malloc(sizeof(*coords)*natom);//alloc_2D_double(3,natom);
+	// now allocate array of structs
+	coords = (coord*)malloc(sizeof(*coords)*natom);
 	if ( coords==NULL )
 	{
 		printf("Allocation error coords");
@@ -109,7 +115,10 @@ int main(int argc, char *argv[])
 	/* Step 4 - read the coordinates and charges. */
 	for (i = 0; i<natom; ++i)
 	{
-		fscanf(fptr, "%lf %lf %lf %lf", &(coords[i].a), &(coords[i].b), &(coords[i].c), &q[i]);
+		// we have to read into the 1d array, now
+		fscanf(fptr, "%lf %lf %lf %lf", 
+				&(coords[i].a), &(coords[i].b), 
+				&(coords[i].c), &q[i]);
 	}
 
 	time1 = clock(); /*time after file read*/
@@ -121,16 +130,20 @@ int main(int argc, char *argv[])
 	total_e = 0.0;
 	cut_count = 0;
 
+	// coordiX correspond to coords[X][i] -> coords[i].X
 	double coordia;
 	double coordib;
 	double coordic;
 
+	// this corresponds to q[i]
 	double q_i;
 
+	// this is the square of the cutoff to compare with vec2
 	double cut2 = cut * cut;
 
 	for (i = 0; i < natom; ++i)
 	{
+		// load derefernces here
 		coordia = coords[i].a;
 		coordib = coords[i].b;
 		coordic = coords[i].c;
@@ -138,23 +151,31 @@ int main(int argc, char *argv[])
 		q_i = q[i];
 		for (j = 0; j < i; ++j)
 		{
+			// now we use a literal square with new dereferences
 			vec2 = (coordia-coords[j].a)*(coordia-coords[j].a)
 				+(coordib-coords[j].b)*(coordib-coords[j].b)
 				+(coordic-coords[j].c)*(coordic-coords[j].c);
 			/* X^2 + Y^2 + Z^2 */
 			/* Check if this is below the cut off */
+
+			// we moved the sqrt inside the if then action and
+			// now compare to cut^2
 			if ( vec2 <= cut2 )
 			{
-				rij = sqrt(vec2);
+				rij = sqrt(vec2); // <- moved here
 				/* Increment the counter of pairs below cutoff */
 				++cut_count;
+				// now we add the multiples of the exponents in one
+				// exp usage
 				current_e = exp(rij*(q_i+q[j]))/rij;
+				// moved - 1.0/a; until after all the for loops
 				total_e = total_e + current_e;
 			}
 		} /* for j=1 j<=natom */
 	} /* for i=1 i<=natom */
 
-	total_e -= 1.0 / a;
+	// moved here, fixed for not being calculated cut_count times
+	total_e -= cut_count / a;
 
 	time2 = clock(); /* time after reading of file and calculation */
 	printf("Value of system clock after coord read and E calc = %ld\n",
@@ -177,6 +198,7 @@ int main(int argc, char *argv[])
 	   ignore this. */
 	free(q);
 	//double_2D_array_free(coords);
+	// now we just allocate the 1d array like normal
 	free(coords);
 
 	fclose(fptr);

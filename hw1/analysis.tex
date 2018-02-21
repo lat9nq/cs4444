@@ -54,10 +54,15 @@
 	An optimization in the code looks much like the previous simplification, 
 	thus not only reducing the number of function calls but also cutting the number of exponentiations by half.
 
-	Finally, a simple optimization follows from a mathematical characteristic in sums. 
+	A simple optimization follows from a mathematical characteristic in sums. 
 	Specifically, $\displaystyle\sum_{i=1}^n{i} = n*i$.
 	Thus, we can avoid subtracting $^1/_a$ each iteration, and instead subtract $x*{^1/_a}$ from the sum,
 	where $x$ is the number of results within the cutoff.
+
+	Finally, a optimization involved taking the two-dimensional \texttt{coords} array and converting it into a one-dimensional array of structs. 
+	The hope here was to imporve cache hits and reduce misses.
+
+	These tests were run on node granger3.
 
 	%\section{Specifications}
 
@@ -76,27 +81,27 @@
 	\begin{center}
 	\begin{tabular}{| p{3cm} | p{4cm} | p{1.5cm} | p{1.5cm} | l |}
 	\hline
-	Compiler flags & Optimization\footnotemark[1] & Time to calculate $E$ (s) & Total Time (s) & Result \\ \hline
-	None & & 1.8205 & 1.8316 & 58261662.7646147534 \\ \hline
-	-O1 & & 1.8001 & 1.8108 & 58261662.7646147534 \\ \hline
-	-O2 & & 1.7017 & 1.7124 & 58261662.7646147534 \\ \hline
-	-O3 & & 1.7050 & 1.7156 & 58261662.7646147534 \\ \hline
-	-Ofast & & 1.4405 & 1.4513 & 58261662.7646147460 \\ \hline
-	-O3 & For-loops start from 0 & 2.1134 & 2.1240 & 58261662.7646147534 \\ \hline
-	-O3 & Bring out dereferences & 1.6763 & 1.6872 & 58261662.7646147534 \\ \hline
-	-O3 & Written-out squaring & 1.7369 & 1.7476 & 58261662.7646147534 \\ \hline
-	-O3 & Combining exponents & 1.5930 & 1.6035 & 58261662.7646147460 \\ \hline
-	-O3 & Comparing $r_{i,j}^2$ to $cut^2$ & 1.5319 & 1.5424 & 58261654.5481551588 \\ \hline
-	-O3 & Subtract $x*{^1/_a}$ later & 1.8358 & 1.8466 & 58261662.7646149173 \\ \hline
-	-O3 & Convert 2D array to 1D struct array & 1.6690 & 1.6690 & 58261662.7646147534 \\ \hline
-	-O2 & All above & 0.9450 & 0.9574 & 58261654.5481553227 \\ \hline
-	-O2 -ffast-math & All above & 0.9342 & 0.9462 & 58261654.5481553227 \\ \hline
-	-Ofast & All above & 0.9299 & 0.9422 & 58261654.5481553227 \\ \hline
-	-Ofast -fno-stack-protector & All above & 0.9283 & 0.9405 & 58261654.5481553227 \\ \hline
+	Compiler flags & Optimization & Time to calculate $E$ (s) & Total Time (s) & Result \\ \hline
+	None & & 2.3691 & 2.3775 & 58261662.7646147534 \\ \hline
+	-O1 & & 1.0806 & 1.0893 & 58261662.7646147534 \\ \hline
+	-O2 & & 0.9236 & 0.9318 & 58261662.7646147534 \\ \hline
+	-O3 & & 0.9155 & 0.9232 & 58261662.7646147534 \\ \hline
+	-Ofast & & 0.7045 & 0.7130 & 58261662.7646147460 \\ \hline
+	-O3 & For-loops start from 0 & 0.9620 & 0.9695 & 58261662.7646147534 \\ \hline
+	-O3 & Re-aligned for-loops & 0.8882 & 0.8961 & 58261662.7646147534 \\ \hline
+	-O3 & Bring out dereferences & 0.8993 & 0.9082 & 58261662.7646147534 \\ \hline
+	-O3 & Written-out squaring & 0.9291 & 0.9380 & 58261662.7646147534 \\ \hline
+	-O3 & Combining exponents & 0.6981 & 0.7071 & 58261662.7646147460 \\ \hline
+	-O3 & Comparing $r_{i,j}^2$ to $cut^2$ & 0.8461 & 0.8547 & 58261654.5481551588 \\ \hline
+	-O3 & Subtract $x*{^1/_a}$ later & 1.1425 & 1.1512 & 58261662.7646149173 \\ \hline
+	-O3 & Convert 2D array to 1D struct array & 0.8772 & 0.8853 & 58261662.7646147534 \\ \hline
+	-O3 & All above & 0.5425 & 0.5521 & 58261654.5481553227 \\ \hline
+	-O3 -ffast-math & All above & 0.5132 & 0.5223 & 58261654.5481553227 \\ \hline
+	-Ofast & All above & 0.5104 & 0.5188 & 58261654.5481553227 \\ \hline
+	-Ofast -fno-stack-protector & All above & 0.4971 & 0.5047 & 58261654.5481553227 \\ \hline
 	\end{tabular}
 	\end{center}
 	\doublespacing
-	\footnotetext[1]{When an optimization is listed, assume it remains in the program as the table progresses.}
 
 	\section{Analysis}
 
@@ -107,11 +112,13 @@
 	Next, -Ofast on the original program produces not only a faster program, but also a slightly different result.
 	The documentation indicates that -Ofast produces code that acts in a different manner from the IEEE specification, and that fact is apparent here.
 
-	Each optimization performed helped the program perform faster than previously. Combining the exponentials resulted in the most significant optimization.
+	Some optimizations resulted in a increase of time taken.
+	This may be because those optimizations work better with other optimizations, 
+	such as in writing out the squaring as opposed to using the \texttt{pow()} method.
 	There is also a difference in the produced result on the change to checking $r_{i,j}^2$ against $cut^2$.
-	The best explanation is the gained resolution from not using the sqrt() function.
-	Since sqrt() is normally implemented through an approximation requiring many iterations of floating-point operations,
-	resolution is likely lost through the sqrt().
+	The best explanation is the gained resolution from not using the \texttt{sqrt()} function.
+	Since \texttt{sqrt()} is normally implemented through an approximation requiring many iterations of floating-point operations,
+	resolution is likely lost through the \texttt{sqrt()}.
 
 	Removing one of the buffer overflow defenses, checking for stack smashing, seems to produce a small time advantage.
 	In a practical implementation, this may or may not be a preferrable optimization 
@@ -129,6 +136,15 @@
 	In general, making the program do less computations results in less execution time, but can result in varrying mathematical results.
 	Varrying optimizations can have varrying magnitudes of change in the calculated result.
 
-	Effective optimizations the programmer can take include reducing calls to heavy math functions, reducing dereferences to arrays, and putting off calculations until later when it is mathematically sound to do so and results in less computations.
+	Effective optimizations the programmer can take include reducing calls to heavy math functions, 
+		reducing dereferences to arrays, 
+		and putting off calculations until later when it is mathematically sound to do so and results in less computations.
+
+	\section{Pledge}
+	On my honor, I pledge that I did not give nor receive help on this assignment.
+
+	\vspace{1cm}
+
+	Louis Thomas
 
 \end{document}
