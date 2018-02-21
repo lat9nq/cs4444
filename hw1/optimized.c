@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 		} /* for j=1 j<=natom */
 	} /* for i=1 i<=natom */
 
-	total_e -= 1.0 / a;
+	total_e -= cut_count / a;
 
 	time2 = clock(); /* time after reading of file and calculation */
 	printf("Value of system clock after coord read and E calc = %ld\n",
