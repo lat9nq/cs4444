@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 #define	BLENDER	"/usr/bin/blender"
 
@@ -12,8 +13,8 @@ int get_param(int * x, char ** arg);
 int main(int argc, char * argv[]) {
 	modes mode = ORDERED;
 	int i;
-	int children;
-	char * filename;
+	int child_count;
+	char filename[256];
 	int rate;
 	int start;
 	int end;
@@ -29,7 +30,7 @@ int main(int argc, char * argv[]) {
 					mode = STAGGERED;
 				break;
 				case 'c':
-					i += get_param(&children, &(argv[i]));
+					i += get_param(&child_count, &(argv[i]));
 				break;
 				case 'f':
 					i += get_param(&rate, &(argv[i]));
@@ -43,25 +44,34 @@ int main(int argc, char * argv[]) {
 			}
 		}
 		else {
-			filename = argv[i];
+			strcpy(filename, argv[i]);
 		}
 	}
 
 	frames = end - start + 1;
 
+	if (filename[0] != '/') {
+		const char * pwd = getenv("PWD");
+		char temp[256];
+		strcpy(temp, pwd);
+		strcat(temp, "/");
+		strcat(temp, filename);
+		strcpy(filename, temp);
+	}
 
 	if (mode == ORDERED) {
 
 		int pid;
 		char start_s[32];
 		char end_s[32];
-		for (i = 0; i < children; i++) {
+		for (i = 0; i < child_count; i++) {
 			pid = fork();
-			sprintf(start_s, "%d", start + i * frames / children);
-			sprintf(end_s, "%d", start + (i+1) * frames / children - 1);
+			sprintf(start_s, "%d", start + i * frames / child_count);
+			sprintf(end_s, "%d", start + (i+1) * frames / child_count - 1);
 			if (pid == 0) {
 				fprintf(stderr, "%s -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
-				execl(BLENDER, "-b", filename, "-s", start_s, "-e", end_s, "-a", (char *)NULL);
+				execl(BLENDER, "-b", filename, "-s", start_s, "-e", end_s, "-a", "-t", "1",
+						(char *)NULL);
 
 				fprintf(stderr, "error: `%s' is not a valid executable\n", BLENDER);
 				exit(0);
@@ -72,7 +82,7 @@ int main(int argc, char * argv[]) {
 	}
 
 	int pid;
-	for (i = 0; i < children; i++) {
+	for (i = 0; i < child_count; i++) {
 		pid = fork();
 	}
 
