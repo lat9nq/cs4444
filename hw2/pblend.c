@@ -53,7 +53,8 @@ int main(int argc, char * argv[]) {
 	if (filename[0] != '/') {
 		const char * pwd = getenv("PWD");
 		char temp[256];
-		strcpy(temp, pwd);
+		strcpy(temp, "/net");
+		strcat(temp, pwd);
 		strcat(temp, "/");
 		strcat(temp, filename);
 		strcpy(filename, temp);
