@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -w slurm[2]
+#SBATCH -w artemis[1]
 #SBATCH -t 1:00:00
 #SBATCH -n 1
 

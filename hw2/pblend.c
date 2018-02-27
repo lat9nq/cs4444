@@ -3,6 +3,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #define	BLENDER	"/usr/bin/blender"
 
@@ -60,6 +61,8 @@ int main(int argc, char * argv[]) {
 		strcpy(filename, temp);
 	}
 
+	int children[child_count];
+
 	if (mode == ORDERED) {
 
 		int pid;
@@ -71,12 +74,19 @@ int main(int argc, char * argv[]) {
 			sprintf(end_s, "%d", start + (i+1) * frames / child_count - 1);
 			if (pid == 0) {
 				fprintf(stderr, "%s -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
-				execl(BLENDER, "-b", filename, "-s", start_s, "-e", end_s, "-a", "-t", "1",
+				execl(BLENDER, "-b", filename, "-s", start_s, "-e", end_s, "-t", "1", "-o", "./out/##.png", "-x", "PNG", "-a",
 						(char *)NULL);
 
 				fprintf(stderr, "error: `%s' is not a valid executable\n", BLENDER);
 				exit(0);
 			}
+			else {
+				children[i] = pid;
+			}
+		}
+
+		for (i = 0; i < child_count; i++) {
+			waitpid(children[i], NULL, 0);
 		}
 
 		return 0;
