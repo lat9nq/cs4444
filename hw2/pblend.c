@@ -54,7 +54,7 @@ int main(int argc, char * argv[]) {
 	if (filename[0] != '/') {
 		const char * pwd = getenv("PWD");
 		char temp[256];
-		strcpy(temp, "/net");
+		temp[0] = 0;
 		strcat(temp, pwd);
 		strcat(temp, "/");
 		strcat(temp, filename);
@@ -74,7 +74,7 @@ int main(int argc, char * argv[]) {
 			sprintf(end_s, "%d", start + (i+1) * frames / child_count - 1);
 			if (pid == 0) {
 				fprintf(stderr, "%s -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
-				execl(BLENDER, "-b", filename, "-s", start_s, "-e", end_s, "-t", "1", "-o", "./out/##.png", "-x", "PNG", "-a",
+				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", "-o", "./##.png", "-F", "PNG",
 						(char *)NULL);
 
 				fprintf(stderr, "error: `%s' is not a valid executable\n", BLENDER);
