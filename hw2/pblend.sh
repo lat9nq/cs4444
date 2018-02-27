@@ -22,9 +22,10 @@ DIFF=`echo "($END - $START + 1) / $CHILDREN" | bc`
 for ((i=0; i<$CHILDREN; i++)); do
 	S=`echo "$i * $DIFF + $START" | bc`
 	E=`echo "$S + $DIFF - 1" | bc`
-	BLEND="$BLENDER -b $FILE -s $S -e $E -a -t 1"
+	BLEND="$BLENDER -t 1 -b $FILE -s $S -e $E -a"
 	echo $BLEND
-	srun -c1 -n1 -t1:00:00 --mem-per-cpu=2 --output=job_`printf %03d $i`.out $BLEND &
+#srun -c1 -n1 -t1:00:00 --mem-per-cpu=2 --output=job_`printf %03d $i`.out $BLEND &
+	$BLEND &
 done;
 
 
