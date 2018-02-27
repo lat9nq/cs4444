@@ -10,5 +10,5 @@
 #SBATCH --output="job.out"
 #SBATCH --error="job.err"
 
-srun -n1 ./pblend sc1_sh5_asteroid_hit.blend -c 2 -f 24 -s 1 -e 60
+srun -n1 ./pblend.sh sc1_sh5_asteroid_hit.blend 1 60 2
 
