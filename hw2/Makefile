@@ -9,5 +9,5 @@ pblend:pblend.o
 
 .PHONY: clean
 clean:
-	-rm -vf *.o pblend
+	-rm -vf *.o pblend *.out *.err
 

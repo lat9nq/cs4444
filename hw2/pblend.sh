@@ -1,8 +1,14 @@
 #!/bin/bash
 
-#SBATCH -w artemis[1]
+#SBATCH -w slurm[2]
 #SBATCH -t 1:00:00
 #SBATCH -n 1
+#SBATCH -c 1
+#SBATCH --mem-per-cpu=2
+
+#SBATCH --output="pblend.out"
+#SBATCH --error="pblend.err"
+#SBATCH --account=lat9nq
 
 BLENDER="/usr/bin/blender"
 
@@ -16,7 +22,9 @@ DIFF=`echo "($END - $START + 1) / $CHILDREN" | bc`
 for ((i=0; i<$CHILDREN; i++)); do
 	S=`echo "$i * $DIFF + $START" | bc`
 	E=`echo "$S + $DIFF - 1" | bc`
-	srun $CHILDREN $BLENDER -b $FILE -s $S -e $E -t 1 -o ./out/\#\#.png -F PNG -a&
+	BLEND="$BLENDER -b $FILE -s $S -e $E -a -t 1"
+	echo $BLEND
+	srun -c1 -n1 -t1:00:00 --mem-per-cpu=2 --output=job_`printf %03d $i`.out $BLEND &
 done;
 
 
