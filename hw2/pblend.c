@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 
 #define	BLENDER	"/usr/bin/blender"
+#define	FFMPEG	"/opt/ffmpeg/bin/ffmpeg"
 
 typedef enum {ORDERED, STAGGERED, RANDOMIZED} modes;
 
@@ -74,7 +75,7 @@ int main(int argc, char * argv[]) {
 			sprintf(end_s, "%d", start + (i+1) * frames / child_count - 1);
 			if (pid == 0) {
 				fprintf(stderr, "%s -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
-				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", "-o", "./##.png", "-F", "PNG",
+				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a",
 						(char *)NULL);
 
 				fprintf(stderr, "error: `%s' is not a valid executable\n", BLENDER);
@@ -87,6 +88,18 @@ int main(int argc, char * argv[]) {
 
 		for (i = 0; i < child_count; i++) {
 			waitpid(children[i], NULL, 0);
+			printf("child %d finished!\n", children[i]);
+		}
+
+		pid = fork();
+		if (pid == 0) {
+			char arg_rate[8];
+			char arg_start[8];
+			sprintf(arg_rate, "%d", rate);
+			sprintf(arg_start, "%d", start);
+			execl(FFMPEG, "-framerate", arg_rate, "-start_number", arg_start, "-i", "pump/bike_pump_%04d.png", "-vcodec", "mpeg4", "output.mp4");
+			fprintf(stderr, "error: `%s' is not a valid executable\n", FFMPEG);
+			exit(0);
 		}
 
 		return 0;
