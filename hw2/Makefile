@@ -1,5 +1,5 @@
 CC=gcc
-CCFLAGS=-Wall -g -std=c90
+CCFLAGS=-Wall -g -std=gnu90
 
 %.o:%.c
 	$(CC) $(CCFLAGS) -o$@ -c $<

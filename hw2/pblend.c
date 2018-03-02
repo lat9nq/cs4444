@@ -1,3 +1,15 @@
+/* pblend.c
+ * C
+ *
+ * Louis Thomas
+ * Prof. Andrew Grimshaw
+ * Intro to Parallel Computing
+ * 1 March 2018
+ *
+ * This is a simple C program that runs Blender in parallel. After which,
+ * the program finishes with a call to ffmpeg, stitching together all the
+ * rendered frames into a single movie.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -6,7 +18,8 @@
 #include <sys/wait.h>
 
 #define	BLENDER	"/usr/bin/blender"
-#define	FFMPEG	"/opt/ffmpeg/bin/ffmpeg"
+#define	FFMPEG	"/usr/bin/ffmpeg"
+//#define	FFMPEG	"/opt/ffmpeg/bin/ffmpeg"
 
 typedef enum {ORDERED, STAGGERED, RANDOMIZED} modes;
 
@@ -14,14 +27,16 @@ int get_param(int * x, char ** arg);
 
 int main(int argc, char * argv[]) {
 	modes mode = ORDERED;
-	int i;
-	int child_count;
+	int i = 0; // counter
+	int child_count = 4; // number of children
 	char filename[256];
-	int rate;
-	int start;
-	int end;
-	int frames;
+	int rate = 24; // frame rate of movie
+	int start = 1; // number of initial frame
+	int end = 250; // number of final frame
+	int frames; // count of frames
+	char blend_out[256];
 
+	// parameter parsing
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {
@@ -31,8 +46,14 @@ int main(int argc, char * argv[]) {
 				case 't':
 					mode = STAGGERED;
 				break;
+				case 'b':
+					i++;
+					strcpy(blend_out, argv[i]);
+					printf("%s\n", blend_out);
+				break;
 				case 'c':
-					i += get_param(&child_count, &(argv[i]));
+					i += get_param(&child_count,
+							&(argv[i]));
 				break;
 				case 'f':
 					i += get_param(&rate, &(argv[i]));
@@ -50,11 +71,13 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
+	// number of frames needing rendered
 	frames = end - start + 1;
 
+	// get the working directory to append to the front of directories
+	const char * pwd = getenv("PWD");
+	char temp[256];
 	if (filename[0] != '/') {
-		const char * pwd = getenv("PWD");
-		char temp[256];
 		temp[0] = 0;
 		strcat(temp, pwd);
 		strcat(temp, "/");
@@ -62,45 +85,70 @@ int main(int argc, char * argv[]) {
 		strcpy(filename, temp);
 	}
 
+	// array of all the children
 	int children[child_count];
 
 	if (mode == ORDERED) {
 
 		int pid;
-		char start_s[32];
-		char end_s[32];
+		char start_s[32]; // string form of start frame index
+		char end_s[32]; // string form of end frame index
+
+		// for each child blender process requested
 		for (i = 0; i < child_count; i++) {
+			// fork/exec
 			pid = fork();
-			sprintf(start_s, "%d", start + i * frames / child_count);
-			sprintf(end_s, "%d", start + (i+1) * frames / child_count - 1);
-			if (pid == 0) {
-				fprintf(stderr, "%s -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
+			if (pid == 0) { // if child
+				// convert to strings for arguments
+				sprintf(start_s, "%d", start + i * frames / child_count);
+				sprintf(end_s, "%d", start + (i+1) * frames / child_count - 1);
+				// ouptut the command to stderr before running
+				fprintf(stderr, "%s -t1 -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
 				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a",
 						(char *)NULL);
 
+				// if we're here, something went wrong!
 				fprintf(stderr, "error: `%s' is not a valid executable\n", BLENDER);
-				exit(0);
+				exit(1);
 			}
 			else {
+				// if parent, remember who the child is
 				children[i] = pid;
 			}
 		}
 
+		// wait for all the children to finish
+		int err; // error code
 		for (i = 0; i < child_count; i++) {
-			waitpid(children[i], NULL, 0);
-			printf("child %d finished!\n", children[i]);
+			waitpid(children[i], &err, 0);
+			if (err) { // on error, stop
+				fprintf(stderr, "error: child %d exited with status code %d\n", children[i], err);
+				exit(0);
+			}
+			else
+				fprintf(stderr, "child %d finished!\n", children[i]);
 		}
 
-		pid = fork();
-		if (pid == 0) {
-			char arg_rate[8];
-			char arg_start[8];
-			sprintf(arg_rate, "%d", rate);
-			sprintf(arg_start, "%d", start);
-			execl(FFMPEG, "-framerate", arg_rate, "-start_number", arg_start, "-i", "pump/bike_pump_%04d.png", "-vcodec", "mpeg4", "output.mp4");
-			fprintf(stderr, "error: `%s' is not a valid executable\n", FFMPEG);
-			exit(0);
+		char arg_rate[8]; // string of frame rate
+		char arg_start[8]; // string of start frame
+
+		// append working directory to file names
+		if (blend_out[0] != '/') {
+			strcpy(temp, pwd);
+			strcat(temp, "/");
+			strcat(temp, blend_out);
+			strcpy(blend_out, temp);
 		}
+
+		// convert numbers to strings
+		sprintf(arg_rate, "%d", rate);
+		sprintf(arg_start, "%d", start);
+
+		// exec, no fork needed
+		fprintf(stderr, "%s -r %s -start_number %s -i %s -vcodec mpeg4 output.mp4\n", FFMPEG, arg_rate, arg_start, blend_out);
+		execl(FFMPEG, "ffmpeg", "-i", blend_out, "-r", arg_rate, "-start_number", arg_start,
+				"-vcodec", "mpeg4", "output.mp4", (char *)NULL);
+		fprintf(stderr, "error: `%s' is not a valid executable\n", FFMPEG);
 
 		return 0;
 	}
