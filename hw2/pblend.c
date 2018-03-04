@@ -91,14 +91,20 @@ int main(int argc, char * argv[]) {
 	if (mode == ORDERED) {
 
 		int pid;
+		int this;
+		int next;
 		char start_s[32]; // string form of start frame index
 		char end_s[32]; // string form of end frame index
+
+		next = start - 1;
 
 		// for each child blender process requested
 		for (i = 0; i < child_count; i++) {
 			// fork/exec
 			pid = fork();
 			if (pid == 0) { // if child
+				this = next + 1;
+				next = start + i * frames / child_count - 1;
 				// convert to strings for arguments
 				sprintf(start_s, "%d", start + i * frames / child_count);
 				sprintf(end_s, "%d", start + (i+1) * frames / child_count - 1);
