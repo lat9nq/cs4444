@@ -35,6 +35,7 @@ int main(int argc, char * argv[]) {
 	int end = 250; // number of final frame
 	int frames; // count of frames
 	char blend_out[256];
+	strcpy(blend_out, "%04d.png");
 
 	// parameter parsing
 	for (i = 1; i < argc; i++) {
@@ -101,6 +102,8 @@ int main(int argc, char * argv[]) {
 	else if (mode == STAGGERED)
 		stagger = child_count;
 
+	time_t init = time(NULL);
+
 	// for each child blender process requested
 	for (i = 0; i < child_count; i++) {
 		if (mode == ORDERED) {
@@ -122,7 +125,7 @@ int main(int argc, char * argv[]) {
 			// ouptut the command to stderr before running
 			if (mode == ORDERED) {
 				fprintf(stderr, "%s -t1 -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
-				//execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", (char *)NULL);
+				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", (char *)NULL);
 			}
 			else if (mode == STAGGERED) {
 				fprintf(stderr, "%s -t1 -b %s -s %s -j %s -a\n", BLENDER, filename, start_s, stagger_s);
@@ -151,6 +154,8 @@ int main(int argc, char * argv[]) {
 			fprintf(stderr, "child %d finished!\n", children[i]);
 	}
 
+	time_t render = time(NULL);
+
 	char arg_rate[8]; // string of frame rate
 	char arg_start[8]; // string of start frame
 
@@ -166,11 +171,23 @@ int main(int argc, char * argv[]) {
 	sprintf(arg_rate, "%d", rate);
 	sprintf(arg_start, "%d", start);
 
-	// exec, no fork needed
-	fprintf(stderr, "%s -r %s -start_number %s -i %s -vcodec mpeg4 output.mp4\n", FFMPEG, arg_rate, arg_start, blend_out);
-	execl(FFMPEG, "ffmpeg", "-i", blend_out, "-r", arg_rate, "-start_number", arg_start,
-			"-vcodec", "mpeg4", "output.mp4", (char *)NULL);
-	fprintf(stderr, "error: `%s' is not a valid executable\n", FFMPEG);
+	pid = fork();
+
+	if (pid == 0) {
+		// exec
+		fprintf(stderr, "%s -r %s -start_number %s -i %s -vcodec mpeg4 output.mp4\n", FFMPEG, arg_rate, arg_start, blend_out);
+		execl(FFMPEG, "ffmpeg", "-i", blend_out, "-r", arg_rate, "-start_number", arg_start,
+				"-vcodec", "mpeg4", "output.mp4", (char *)NULL);
+		fprintf(stderr, "error: `%s' is not a valid executable\n", FFMPEG);
+		exit(0);
+	}
+	waitpid(pid, NULL, 0);
+
+	time_t total = time(NULL);
+
+	fprintf(stderr, "time at init: %ld\n", init);
+	fprintf(stderr, "time after rendering: %ld (+%lds)\n", render, render - init);
+	fprintf(stderr, "time now: %ld (+%lds)\n", total, total - init);
 
 	return 0;
 }
