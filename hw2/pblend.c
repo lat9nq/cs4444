@@ -19,6 +19,7 @@
 
 #define	BLENDER	"/usr/bin/blender"
 #define	FFMPEG	"/usr/bin/ffmpeg"
+#define CHILDREN_PER_NODE	20
 //#define	FFMPEG	"/opt/ffmpeg/bin/ffmpeg"
 
 typedef enum {ORDERED, STAGGERED, RANDOMIZED} modes;
@@ -75,6 +76,25 @@ int main(int argc, char * argv[]) {
 	// number of frames needing rendered
 	frames = end - start + 1;
 
+	int pid;
+	int allocations = child_count / CHILDREN_PER_NODE + 1;
+
+	for (i = 0; i < allocations; i++) {
+		pid = fork();
+		if (!pid) {
+			execl("salloc", "-w", "granger[4]", "-t", "1:00:00", "-c", "20", "--output=\"job.out\"", "--error=\"job.err\"", (char *) NULL);
+			fprintf(stderr, "error: salloc is not a valid executable\n");
+			exit(1);
+		}
+		int status;
+		waitpid(pid, &status, 0);
+		if (status) {
+			fprintf(stderr, "error: salloc failed\n");
+			fprintf(stderr, "stopping...\n");
+			exit(0);
+		}
+	}
+
 	// get the working directory to append to the front of directories
 	const char * pwd = getenv("PWD");
 	char temp[256];
@@ -89,7 +109,6 @@ int main(int argc, char * argv[]) {
 	// array of all the children
 	int children[child_count];
 
-	int pid;
 	int this = 0;
 	int next = 0;
 	int stagger = 0;
@@ -125,11 +144,11 @@ int main(int argc, char * argv[]) {
 			// ouptut the command to stderr before running
 			if (mode == ORDERED) {
 				fprintf(stderr, "%s -t1 -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
-				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", (char *)NULL);
+				execl("srun", BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", (char *)NULL);
 			}
 			else if (mode == STAGGERED) {
 				fprintf(stderr, "%s -t1 -b %s -s %s -j %s -a\n", BLENDER, filename, start_s, stagger_s);
-				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-j", stagger_s, "-a", (char *)NULL);
+				execl("srun", BLENDER, "-t1", "-b", filename, "-s", start_s, "-j", stagger_s, "-a", (char *)NULL);
 			}
 
 			// if we're here, something went wrong!

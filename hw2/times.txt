@@ -1,0 +1,2 @@
+Cores	Render	Total
+1	1594	1600
