@@ -45,13 +45,13 @@ int main(int argc, char * argv[]) {
 				case 'r':
 					mode = RANDOMIZED;
 				break;
-				case 't':
+				case 'j':
 					mode = STAGGERED;
 				break;
 				case 'b':
 					i++;
 					strcpy(blend_out, argv[i]);
-					printf("%s\n", blend_out);
+					//printf("%s\n", blend_out);
 				break;
 				case 'c':
 					i += get_param(&child_count,
@@ -77,6 +77,7 @@ int main(int argc, char * argv[]) {
 	frames = end - start + 1;
 
 	int pid;
+	/*
 	int allocations = child_count / CHILDREN_PER_NODE + 1;
 
 	for (i = 0; i < allocations; i++) {
@@ -94,6 +95,7 @@ int main(int argc, char * argv[]) {
 			exit(0);
 		}
 	}
+	*/
 
 	// get the working directory to append to the front of directories
 	const char * pwd = getenv("PWD");
@@ -144,11 +146,11 @@ int main(int argc, char * argv[]) {
 			// ouptut the command to stderr before running
 			if (mode == ORDERED) {
 				fprintf(stderr, "%s -t1 -b %s -s %s -e %s -a\n", BLENDER, filename, start_s, end_s);
-				execl("srun", BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", (char *)NULL);
+				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-e", end_s, "-a", (char *)NULL);
 			}
 			else if (mode == STAGGERED) {
 				fprintf(stderr, "%s -t1 -b %s -s %s -j %s -a\n", BLENDER, filename, start_s, stagger_s);
-				execl("srun", BLENDER, "-t1", "-b", filename, "-s", start_s, "-j", stagger_s, "-a", (char *)NULL);
+				execl(BLENDER, "-t1", "-b", filename, "-s", start_s, "-j", stagger_s, "-a", (char *)NULL);
 			}
 
 			// if we're here, something went wrong!

@@ -1,2 +1,3 @@
 Cores	Render	Total
 1	1594	1600
+4	856	866
