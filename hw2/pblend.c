@@ -197,7 +197,7 @@ int main(int argc, char * argv[]) {
 	if (pid == 0) {
 		// exec
 		fprintf(stderr, "%s -r %s -start_number %s -i %s -vcodec mpeg4 output.mp4\n", FFMPEG, arg_rate, arg_start, blend_out);
-		execl(FFMPEG, "ffmpeg", "-i", blend_out, "-r", arg_rate, "-start_number", arg_start,
+		execl(FFMPEG, "ffmpeg", "-y", "-i", blend_out, "-r", arg_rate, "-start_number", arg_start,
 				"-vcodec", "mpeg4", "output.mp4", (char *)NULL);
 		fprintf(stderr, "error: `%s' is not a valid executable\n", FFMPEG);
 		exit(0);
