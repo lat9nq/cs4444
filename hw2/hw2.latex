@@ -1,0 +1,87 @@
+\documentclass[12pt]{article}
+
+\title{CS 4444 Assignment 2: High Throughput Computing}
+\author{Louis Thomas}
+\date{27 February 2018}
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{rotating}
+\usepackage{setspace}
+\doublespacing{}
+
+\begin{document}
+
+	\maketitle
+
+	\section{Problem Description}
+
+		This assignment is aimed at demonstrating the speedup from using multiple threads in calculations versus traditional, single-threaded computing.
+		It was less focused on programming itself, but instead on the concepts of using more than one CPU to do many very similar computations in parallel.
+
+		More specifically, this assigment asks for a movie to be rendered from a Blender source file using Blender, a 3D render and animation suite.
+		Assuming the source file is optimized as much as possible,
+		the question was how much faster using 1, 10, 20, 40, or 80 CPU cores was compared to each other.
+
+	\section{Approach}
+
+		Blender, by default, uses as many cores as are available to it at the time it is invoked.
+		If that feature was left enabled, then it would defeat the purpose of this assignment.
+		Thus, all invokations of Blender were with \texttt{-t1}, meaning Blender will only use a single thread per call.
+
+		In order to control calls to Blender and FFMPEG, C programming was mixed with Bash scripting.
+		\texttt{fork()} and \texttt{exec()} directly called Blender and FFMPEG with C.
+		Bash scripting enabled the used of 80 cores, and in all other cases the C program was able to use 40 or less cores.
+
+		The C program's purpose is to calculate the specific frames that each Blender call needs to worry about.
+		It has two modes: calculate for a range of frames, or calculate for skipping a regular interval of frames.
+		After it makes all the Blender calls, it waits for each child.
+		Once the children finish, it then calls FFMPEG on the renders to stitch together the resulting MP4 video.
+
+	\section{Results}
+
+	\iffalse
+		\singlespacing
+		\begin{center}
+		\begin{tabular}{| r | r | r |}
+		\hline
+		Cores	& Render time (s)	& Total time (s)	\\ \hline
+		1	& 1594	& 1600	\\ \hline
+		10	& 391	& 395	\\ \hline
+		20	& 216	& 223	\\ \hline
+		40	& 127	& 127	\\ \hline
+		80	& 71/68	& 75	\\ \hline
+		\end{tabular}
+		\end{center}
+		\doublespacing
+	\fi
+
+		\begin{figure}
+		\begin{center}
+		\input{times.tex}
+		\end{center}
+		\caption{Times to render BikePump.blend}
+		\label{fig:render}
+		\end{figure}
+
+		Figure~\ref{fig:render} shows the time measurements of running the program with a varying number of processors.
+		As the number of cores applied doubles, the time required to solve the problem is approximately cut in half.
+
+		Because the problem size (250 frames) remains constant between each test, we see the effects of Ahmdahl's Law here,
+		where the speedup is proportional to the inverse of the count of active processors.
+
+	\section{Analysis}
+
+		The Blender file rendered is BikePump.blend.
+		This model was made to satisfy a technical description of the real-world equivalent,
+		and depicts a foot-operated bike pump being pressed into itself.
+		The render is 250 frames at 24 frames per second.
+
+		Since the \texttt{granger} nodes at UVA are 40 cores each, it is impossible to do an 80 core parallel rendering with a single node.
+		In order to do an 80 core test, two extra SBATCH scripts were created, each geared to use 40 cores on two separate \texttt{granger} nodes.
+
+
+
+	\section{Conclusions}
+	\section{Pledge}
+
+\end{document}

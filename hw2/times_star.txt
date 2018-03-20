@@ -1,0 +1,6 @@
+Cores	Render	Total	jRender	jTotal
+1	763	829	-	-
+10	+178s	+187s	+166s	+228s
+20	+150s	+212s	+137s	+212s
+40	+134s	+200s	+132s	+206s
+80	
