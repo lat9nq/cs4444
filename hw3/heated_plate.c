@@ -18,9 +18,12 @@
 #define LEFT_BOUNDARY_VALUE 0.0
 #define RIGHT_BOUNDARY_VALUE 100.0
 #define INITIAL_CELL_VALUE 50.0
-#define hotSpotRow 4500
-#define hotSptCol 6500
+//#define hotSpotRow 4500
+//#define hotSptCol 6500
 #define hotSpotTemp 1000
+
+int hotSpotRow = 4500;
+int hotSptCol = 6500;
 
 int threads;
 int num_cols;
@@ -55,6 +58,9 @@ int main(int argc, char **argv) {
 	iterations = (argc > 3) ? atoi(argv[3]) : 100;
 
 	threads = (argc > 4) ? atoi(argv[4]) : 4;
+
+	hotSpotRow = hotSpotRow * num_rows / 10000;
+	hotSptCol = hotSptCol * num_cols / 10000;
 	
 	// Output the simulation parameters
 	printf("Grid: %dx%d, Iterations: %d\n", num_cols, num_rows, iterations);
@@ -266,7 +272,7 @@ void * thread_work(void * a) {
 		last_plate = which_plate;
 		which_plate = !which_plate;
 
-		//plate[which_plate][hotSpotRow][hotsSptCol] = hotSpotTemp;
+		plate[last_plate][hotSpotRow][hotSptCol] = hotSpotTemp;
 
 		pthread_barrier_wait(args->bar);
 
