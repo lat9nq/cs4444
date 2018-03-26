@@ -48,6 +48,7 @@ void * thread_work(void * a);
 int main(int argc, char **argv) {
 	// Record the start time of the program
 	time_t start_time = time(NULL);
+	clock_t start_clock = clock();
 	
 	// Extract the input parameters from the command line arguments
 	// Number of columns in the grid (default = 1,000)
@@ -98,6 +99,7 @@ int main(int argc, char **argv) {
 	pthread_barrier_t barrier;
 	pthread_barrier_init(&barrier, NULL, threads);
 
+	clock_t split_clock = clock();
 	for (i = 0; i < threads; i++) {
 		args[i].plate = cells;
 		args[i].whom = i;
@@ -143,6 +145,9 @@ int main(int argc, char **argv) {
 	// Compute and output the execution time
 	time_t end_time = time(NULL);
 	printf("\nExecution time: %d seconds\n", (int) difftime(end_time, start_time));
+	clock_t end_clock = clock();
+	double clocks_taken = split_clock - start_clock + (end_clock - split_clock) / (double) threads;
+	printf("\t%lg\n", clocks_taken / (double)CLOCKS_PER_SEC);
 	
 	return 0;
 }
@@ -152,7 +157,16 @@ int main(int argc, char **argv) {
 float **allocate_cells(int num_cols, int num_rows) {
 	float **array = (float **) malloc(num_rows * sizeof(float *));
 	if (array == NULL) die("Error allocating array!\n");
-	
+
+	int i;
+	for (i = 0; i < num_rows; i++) {
+		array[i] = (float *)malloc(sizeof(*(array[i])) * num_cols);
+		if (array[i] == NULL) {
+			die("Error allocating array!\n");
+		}
+	}
+
+	/*
 	array[0] = (float *) malloc(num_rows * num_cols * sizeof(float));
 	if (array[0] == NULL) die("Error allocating array!\n");
 
@@ -160,6 +174,7 @@ float **allocate_cells(int num_cols, int num_rows) {
 	for (i = 1; i < num_rows; i++) {
 		array[i] = array[0] + (i * num_cols);
 	}
+	*/
 
 	return array;
 }
@@ -252,35 +267,38 @@ void * thread_work(void * a) {
 	arg_struct * args = (arg_struct *)a;
 	float *** plate = args->plate;
 	int i, x, y;
-	int which_plate = 1;
-	int last_plate = 0;
+	//int which_plate = 1;
+	//int last_plate = 0;
 
 	int rows = num_rows / threads;
 	int start_at = rows * args->whom + 1;
 	//printf("#%d is starting at %d for %d rows\n", args->whom, start_at, rows);
 
-	for (i = 0; i < iterations; i++) {
+	for (i = 0; i < iterations / 2; i++) {
 		for (y = start_at; y <= rows + start_at - 1; y++) {
 			for (x = 1; x <= num_cols; x++) {
-				plate[which_plate][y][x] = (plate[last_plate][y][x - 1] +
-					plate[last_plate][y][x + 1] +
-					plate[last_plate][y - 1][x] +
-					plate[last_plate][y + 1][x]) * 0.25;
+				plate[1][y][x] = (plate[0][y][x - 1] +
+					plate[0][y][x + 1] +
+					plate[0][y - 1][x] +
+					plate[0][y + 1][x]) * 0.25;
 			}
 		}
 
-		last_plate = which_plate;
-		which_plate = !which_plate;
-
-		plate[last_plate][hotSpotRow][hotSptCol] = hotSpotTemp;
-
+		plate[1][hotSpotRow][hotSptCol] = hotSpotTemp;
 		pthread_barrier_wait(args->bar);
 
-		/*
-		if (args->whom == 0) {
-			printf("Iteration: %d / %d\n", i + 1, iterations);
+		for (y = start_at; y <= rows + start_at - 1; y++) {
+			for (x = 1; x <= num_cols; x++) {
+				plate[0][y][x] = (plate[1][y][x - 1] +
+					plate[1][y][x + 1] +
+					plate[1][y - 1][x] +
+					plate[1][y + 1][x]) * 0.25;
+			}
+		}
 
-		}*/
+		plate[0][hotSpotRow][hotSptCol] = hotSpotTemp;
+
+		pthread_barrier_wait(args->bar);
 	}
 }
 
