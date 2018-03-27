@@ -11,6 +11,7 @@
 #include <time.h>
 #include <pthread.h>
 
+#include "thread_work.h"
 
 // Define the immutable boundary conditions and the inital cell value
 #define TOP_BOUNDARY_VALUE 0.0
@@ -21,9 +22,6 @@
 //#define hotSpotRow 4500
 //#define hotSptCol 6500
 #define hotSpotTemp 1000
-
-int hotSpotRow = 4500;
-int hotSptCol = 6500;
 
 int threads;
 int num_cols;
@@ -36,14 +34,6 @@ void initialize_cells(float **cells, int n_x, int n_y);
 void create_snapshot(float **cells, int n_x, int n_y, int id);
 float **allocate_cells(int n_x, int n_y);
 void die(const char *error);
-
-typedef struct {
-	float *** plate;
-	int whom;
-	pthread_barrier_t * bar;
-} arg_struct;
-
-void * thread_work(void * a);
 
 int main(int argc, char **argv) {
 	// Record the start time of the program
@@ -60,8 +50,8 @@ int main(int argc, char **argv) {
 
 	threads = (argc > 4) ? atoi(argv[4]) : 4;
 
-	hotSpotRow = hotSpotRow * num_rows / 10000;
-	hotSptCol = hotSptCol * num_cols / 10000;
+	hotSpotRow = 4500 * num_rows / 10000;
+	hotSptCol = 6500 * num_cols / 10000;
 	
 	// Output the simulation parameters
 	printf("Grid: %dx%d, Iterations: %d\n", num_cols, num_rows, iterations);
@@ -92,7 +82,7 @@ int main(int argc, char **argv) {
 
 	pthread_attr_t attr;
 	pthread_t tid[threads];
-	arg_struct args[threads];
+	row_arg_t args[threads];
 
 	pthread_attr_init(&attr);
 
@@ -104,8 +94,11 @@ int main(int argc, char **argv) {
 		args[i].plate = cells;
 		args[i].whom = i;
 		args[i].bar = &barrier;
+		args[i].iterations = iterations;
+		args[i].rows = num_rows / threads;
+		args[i].cols = num_cols / threads;
 
-		pthread_create(&tid[i], NULL, thread_work, (void *)&args[i]);
+		pthread_create(&tid[i], NULL, thread_work_basic, (void *)&args[i]);
 	}
 
 	for (i = 0; i < threads; i++) {
@@ -261,44 +254,5 @@ void create_snapshot(float **cells, int num_cols, int num_rows, int id) {
 void die(const char *error) {
 	printf("%s", error);
 	exit(1);
-}
-
-void * thread_work(void * a) {
-	arg_struct * args = (arg_struct *)a;
-	float *** plate = args->plate;
-	int i, x, y;
-	//int which_plate = 1;
-	//int last_plate = 0;
-
-	int rows = num_rows / threads;
-	int start_at = rows * args->whom + 1;
-	//printf("#%d is starting at %d for %d rows\n", args->whom, start_at, rows);
-
-	for (i = 0; i < iterations / 2; i++) {
-		for (y = start_at; y <= rows + start_at - 1; y++) {
-			for (x = 1; x <= num_cols; x++) {
-				plate[1][y][x] = (plate[0][y][x - 1] +
-					plate[0][y][x + 1] +
-					plate[0][y - 1][x] +
-					plate[0][y + 1][x]) * 0.25;
-			}
-		}
-
-		plate[1][hotSpotRow][hotSptCol] = hotSpotTemp;
-		pthread_barrier_wait(args->bar);
-
-		for (y = start_at; y <= rows + start_at - 1; y++) {
-			for (x = 1; x <= num_cols; x++) {
-				plate[0][y][x] = (plate[1][y][x - 1] +
-					plate[1][y][x + 1] +
-					plate[1][y - 1][x] +
-					plate[1][y + 1][x]) * 0.25;
-			}
-		}
-
-		plate[0][hotSpotRow][hotSptCol] = hotSpotTemp;
-
-		pthread_barrier_wait(args->bar);
-	}
 }
 
