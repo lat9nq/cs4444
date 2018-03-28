@@ -23,11 +23,6 @@
 //#define hotSptCol 6500
 #define hotSpotTemp 1000
 
-int threads;
-int num_cols;
-int num_rows;
-int iterations;
-
 // Function prototypes
 void print_cells(float **cells, int n_x, int n_y);
 void initialize_cells(float **cells, int n_x, int n_y);
@@ -94,42 +89,14 @@ int main(int argc, char **argv) {
 		args[i].plate = cells;
 		args[i].whom = i;
 		args[i].bar = &barrier;
-		args[i].iterations = iterations;
 		args[i].rows = num_rows / threads;
-		args[i].cols = num_cols / threads;
 
-		pthread_create(&tid[i], NULL, thread_work_basic, (void *)&args[i]);
+		pthread_create(&tid[i], NULL, thread_work, (void *)&args[i]);
 	}
 
 	for (i = 0; i < threads; i++) {
 		pthread_join(tid[i], NULL);
 	}
-
-	/*
-	// Simulate the heat flow for the specified number of iterations
-	for (i = 0; i < iterations; i++) {
-		// Traverse the plate, computing the new value of each cell
-		for (y = 1; y <= num_rows; y++) {
-			for (x = 1; x <= num_cols; x++) {
-				// The new value of this cell is the average of the old values of this cell's four neighbors
-				cells[next_cells_index][y][x] = (cells[cur_cells_index][y][x - 1]  +
-				                                 cells[cur_cells_index][y][x + 1]  +
-				                                 cells[cur_cells_index][y - 1][x]  +
-				                                 cells[cur_cells_index][y + 1][x]) * 0.25;
-			}
-		}
-		
-		// Swap the two arrays
-		cur_cells_index = next_cells_index;
-		next_cells_index = !cur_cells_index;
-
-
-		cells[cur_cells_index][hotSpotRow][hotSptCol] = hotSpotTemp;
-		
-		// Print the current progress
-		printf("Iteration: %d / %d\n", i + 1, iterations);
-	}
-	*/
 	
 	// Output a snapshot of the final state of the plate
 	int final_cells = (iterations % 2 == 0) ? 0 : 1;

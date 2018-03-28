@@ -7,17 +7,21 @@ int hotSpotRow;
 int hotSptCol;
 #define hotSpotTemp 1000
 
+int iterations;
+int num_rows;
+int num_cols;
+int threads;
+
 typedef struct {
 	float *** plate;
-	int whom, rows, cols;
+	int whom, rows;
 	pthread_barrier_t * bar;
-	int iterations;
 } row_arg_t;
 
 typedef struct {
 } checker_arg_t;
 
-void * thread_work_basic(void * a);
+void * thread_work(void * a);
 void * thread_work_less_looping(void * a);
 void * thread_work_checkerboard(void * a);
 

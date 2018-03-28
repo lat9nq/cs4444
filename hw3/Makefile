@@ -1,5 +1,5 @@
 CC=gcc
-CCFLAGS=-Wall -Ofast -std=gnu90
+CCFLAGS=-Wall -g -std=gnu90
 LIBS=-lm -lpthread
 
 %.o:%.c
