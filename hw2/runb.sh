@@ -10,5 +10,5 @@
 #SBATCH --output="job_b.out"
 #SBATCH --error="job_b.err"
 
-./pblend Star_Collapse.blend -s 126 -e 250 -f 24 -c 40 -b explosion/star_coll_%04d.png
+./pblend Star_Collapse.blend -s 2 -e 250 -f 24 -j -t 80 -c 40 -b explosion/star_coll_%04d.png
 

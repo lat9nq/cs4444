@@ -140,7 +140,7 @@ int main(int argc, char * argv[]) {
 			next = start + (i+1) * frames / child_count - 1;
 		}
 		else if (mode == STAGGERED) {
-			this = i + total_children / child_count;
+			this = start + i * total_children / child_count;
 			if (i >= end)
 				break;
 		}
