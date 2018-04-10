@@ -10,5 +10,5 @@
 #SBATCH --output="job_a.out"
 #SBATCH --error="job_a.err"
 
-./pblend BikePump.blend -s 1 -e 125 -f 24 -c 40 -b pump/bike_pump_%04d.png
+./pblend Star_Collapse.blend -j -s 1 -e 125 -f 24 -c 40 -b explosion/star_coll_%04d.png
 

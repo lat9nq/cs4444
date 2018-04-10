@@ -4,11 +4,12 @@
 
 #SBATCH --get-user-env
 
-#SBATCH -c 40
+#SBATCH --exclusive
+#SBATCH -c 10
 #SBATCH -t 1:00:00
-#SBATCH -w granger[4]
-#SBATCH --output="job.out"
-#SBATCH --error="job.err"
+#SBATCH -w granger[6]
+#SBATCH --output="job_10.out"
+#SBATCH --error="job_10.err"
 
-./pblend BikePump.blend -s 1 -e 250 -f 24 -c 40 -b pump/bike_pump_%04d.png
+./pblend Star_Collapse.blend -s 1 -e 250 -f 24 -c 10 -b explosion/star_coll_%04d.png -j
 
