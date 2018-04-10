@@ -30,6 +30,7 @@ int main(int argc, char * argv[]) {
 	modes mode = ORDERED;
 	int i = 0; // counter
 	int child_count = 4; // number of children
+	int total_children = 0;
 	char filename[256];
 	int rate = 24; // frame rate of movie
 	int start = 1; // number of initial frame
@@ -57,6 +58,10 @@ int main(int argc, char * argv[]) {
 					i += get_param(&child_count,
 							&(argv[i]));
 				break;
+				case 't':
+					i += get_param(&total_children,
+							&(argv[i]));
+				break;
 				case 'f':
 					i += get_param(&rate, &(argv[i]));
 				break;
@@ -72,6 +77,9 @@ int main(int argc, char * argv[]) {
 			strcpy(filename, argv[i]);
 		}
 	}
+
+	if (total_children < child_count)
+		total_children = child_count;
 
 	// number of frames needing rendered
 	frames = end - start + 1;
@@ -121,7 +129,7 @@ int main(int argc, char * argv[]) {
 	if (mode == ORDERED)
 		next = start - 1;
 	else if (mode == STAGGERED)
-		stagger = child_count;
+		stagger = total_children;
 
 	time_t init = time(NULL);
 
@@ -132,7 +140,7 @@ int main(int argc, char * argv[]) {
 			next = start + (i+1) * frames / child_count - 1;
 		}
 		else if (mode == STAGGERED) {
-			this = i + 1;
+			this = i + total_children / child_count;
 			if (i >= end)
 				break;
 		}
