@@ -11,6 +11,7 @@
 #include <time.h>
 #include <pthread.h>
 
+#include "thread_work.h"
 
 // Define the immutable boundary conditions and the inital cell value
 #define TOP_BOUNDARY_VALUE 0.0
@@ -22,14 +23,6 @@
 //#define hotSptCol 6500
 #define hotSpotTemp 1000
 
-int hotSpotRow = 4500;
-int hotSptCol = 6500;
-
-int threads;
-int num_cols;
-int num_rows;
-int iterations;
-
 // Function prototypes
 void print_cells(float **cells, int n_x, int n_y);
 void initialize_cells(float **cells, int n_x, int n_y);
@@ -37,17 +30,10 @@ void create_snapshot(float **cells, int n_x, int n_y, int id);
 float **allocate_cells(int n_x, int n_y);
 void die(const char *error);
 
-typedef struct {
-	float *** plate;
-	int whom;
-	pthread_barrier_t * bar;
-} arg_struct;
-
-void * thread_work(void * a);
-
 int main(int argc, char **argv) {
 	// Record the start time of the program
 	time_t start_time = time(NULL);
+	clock_t start_clock = clock();
 	
 	// Extract the input parameters from the command line arguments
 	// Number of columns in the grid (default = 1,000)
@@ -59,8 +45,8 @@ int main(int argc, char **argv) {
 
 	threads = (argc > 4) ? atoi(argv[4]) : 4;
 
-	hotSpotRow = hotSpotRow * num_rows / 10000;
-	hotSptCol = hotSptCol * num_cols / 10000;
+	hotSpotRow = 4500 * num_rows / 10000;
+	hotSptCol = 6500 * num_cols / 10000;
 	
 	// Output the simulation parameters
 	printf("Grid: %dx%d, Iterations: %d\n", num_cols, num_rows, iterations);
@@ -91,17 +77,19 @@ int main(int argc, char **argv) {
 
 	pthread_attr_t attr;
 	pthread_t tid[threads];
-	arg_struct args[threads];
+	row_arg_t args[threads];
 
 	pthread_attr_init(&attr);
 
 	pthread_barrier_t barrier;
 	pthread_barrier_init(&barrier, NULL, threads);
 
+	clock_t split_clock = clock();
 	for (i = 0; i < threads; i++) {
 		args[i].plate = cells;
 		args[i].whom = i;
 		args[i].bar = &barrier;
+		args[i].rows = num_rows / threads;
 
 		pthread_create(&tid[i], NULL, thread_work, (void *)&args[i]);
 	}
@@ -109,32 +97,6 @@ int main(int argc, char **argv) {
 	for (i = 0; i < threads; i++) {
 		pthread_join(tid[i], NULL);
 	}
-
-	/*
-	// Simulate the heat flow for the specified number of iterations
-	for (i = 0; i < iterations; i++) {
-		// Traverse the plate, computing the new value of each cell
-		for (y = 1; y <= num_rows; y++) {
-			for (x = 1; x <= num_cols; x++) {
-				// The new value of this cell is the average of the old values of this cell's four neighbors
-				cells[next_cells_index][y][x] = (cells[cur_cells_index][y][x - 1]  +
-				                                 cells[cur_cells_index][y][x + 1]  +
-				                                 cells[cur_cells_index][y - 1][x]  +
-				                                 cells[cur_cells_index][y + 1][x]) * 0.25;
-			}
-		}
-		
-		// Swap the two arrays
-		cur_cells_index = next_cells_index;
-		next_cells_index = !cur_cells_index;
-
-
-		cells[cur_cells_index][hotSpotRow][hotSptCol] = hotSpotTemp;
-		
-		// Print the current progress
-		printf("Iteration: %d / %d\n", i + 1, iterations);
-	}
-	*/
 	
 	// Output a snapshot of the final state of the plate
 	int final_cells = (iterations % 2 == 0) ? 0 : 1;
@@ -143,6 +105,9 @@ int main(int argc, char **argv) {
 	// Compute and output the execution time
 	time_t end_time = time(NULL);
 	printf("\nExecution time: %d seconds\n", (int) difftime(end_time, start_time));
+	clock_t end_clock = clock();
+	double clocks_taken = split_clock - start_clock + (end_clock - split_clock) / (double) threads;
+	printf("\t%lg\n", clocks_taken / (double)CLOCKS_PER_SEC);
 	
 	return 0;
 }
@@ -152,7 +117,16 @@ int main(int argc, char **argv) {
 float **allocate_cells(int num_cols, int num_rows) {
 	float **array = (float **) malloc(num_rows * sizeof(float *));
 	if (array == NULL) die("Error allocating array!\n");
-	
+
+	int i;
+	for (i = 0; i < num_rows; i++) {
+		array[i] = (float *)malloc(sizeof(*(array[i])) * num_cols);
+		if (array[i] == NULL) {
+			die("Error allocating array!\n");
+		}
+	}
+
+	/*
 	array[0] = (float *) malloc(num_rows * num_cols * sizeof(float));
 	if (array[0] == NULL) die("Error allocating array!\n");
 
@@ -160,6 +134,7 @@ float **allocate_cells(int num_cols, int num_rows) {
 	for (i = 1; i < num_rows; i++) {
 		array[i] = array[0] + (i * num_cols);
 	}
+	*/
 
 	return array;
 }
@@ -246,41 +221,5 @@ void create_snapshot(float **cells, int num_cols, int num_rows, int id) {
 void die(const char *error) {
 	printf("%s", error);
 	exit(1);
-}
-
-void * thread_work(void * a) {
-	arg_struct * args = (arg_struct *)a;
-	float *** plate = args->plate;
-	int i, x, y;
-	int which_plate = 1;
-	int last_plate = 0;
-
-	int rows = num_rows / threads;
-	int start_at = rows * args->whom + 1;
-	//printf("#%d is starting at %d for %d rows\n", args->whom, start_at, rows);
-
-	for (i = 0; i < iterations; i++) {
-		for (y = start_at; y <= rows + start_at - 1; y++) {
-			for (x = 1; x <= num_cols; x++) {
-				plate[which_plate][y][x] = (plate[last_plate][y][x - 1] +
-					plate[last_plate][y][x + 1] +
-					plate[last_plate][y - 1][x] +
-					plate[last_plate][y + 1][x]) * 0.25;
-			}
-		}
-
-		last_plate = which_plate;
-		which_plate = !which_plate;
-
-		plate[last_plate][hotSpotRow][hotSptCol] = hotSpotTemp;
-
-		pthread_barrier_wait(args->bar);
-
-		/*
-		if (args->whom == 0) {
-			printf("Iteration: %d / %d\n", i + 1, iterations);
-
-		}*/
-	}
 }
 
